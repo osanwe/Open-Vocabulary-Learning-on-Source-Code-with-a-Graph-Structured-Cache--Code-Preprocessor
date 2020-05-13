@@ -87,7 +87,9 @@ public class DataController {
             graphManager.process(node);
             TinkerGraph graph = graphManager.getGraph();
             OutputStream outputStream = new FileOutputStream(new File(outputDir + File.separator + nodeEntry.getKey() + ".graphml"));
-            GraphMLWriter.outputGraph(graph, outputStream);
+            GraphMLWriter writer = new GraphMLWriter(graph);
+            writer.setNormalize(true);
+            writer.outputGraph(outputStream);
         }
         return parsedSource.keySet();
     }
