@@ -12,8 +12,7 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeS
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.tinkerpop.blueprints.util.io.graphson.GraphSONMode;
-import com.tinkerpop.blueprints.util.io.graphson.GraphSONWriter;
+import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONWriter;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,7 +53,8 @@ public class ConnectedGraphTest {
             graphManager.process(node);
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        GraphSONWriter.outputGraph(graphManager.getGraph(), outputStream, GraphSONMode.COMPACT);
+        GraphSONWriter writer = GraphSONWriter.build().create();
+        writer.writeGraph(outputStream, graphManager.getGraph());
         JsonElement parse = new JsonParser().parse(outputStream.toString());
         String s = new GsonBuilder().setPrettyPrinting().create().toJson(parse);
         System.out.println(s);

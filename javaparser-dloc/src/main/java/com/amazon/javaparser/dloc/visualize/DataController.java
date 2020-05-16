@@ -12,10 +12,9 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeS
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
-import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
-import com.tinkerpop.blueprints.util.io.graphson.GraphSONMode;
-import com.tinkerpop.blueprints.util.io.graphson.GraphSONWriter;
+import org.apache.tinkerpop.gremlin.structure.io.graphml.GraphMLWriter;
+import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONWriter;
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -56,7 +55,8 @@ public class DataController {
         }
         TinkerGraph graph = graphManager.getGraph();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        GraphSONWriter.outputGraph(graph, outputStream, GraphSONMode.COMPACT);
+        GraphSONWriter writer = GraphSONWriter.build().create();
+        writer.writeGraph(outputStream, graph);
         return new GsonBuilder().setPrettyPrinting().create().toJson(new JsonParser().parse(outputStream.toString()));
     }
 
@@ -87,9 +87,8 @@ public class DataController {
             graphManager.process(node);
             TinkerGraph graph = graphManager.getGraph();
             OutputStream outputStream = new FileOutputStream(new File(outputDir + File.separator + nodeEntry.getKey() + ".graphml"));
-            GraphMLWriter writer = new GraphMLWriter(graph);
-            writer.setNormalize(true);
-            writer.outputGraph(outputStream);
+            GraphMLWriter writer = GraphMLWriter.build().normalize(true).create();
+            writer.writeGraph(outputStream, graph);
         }
         return parsedSource.keySet();
     }

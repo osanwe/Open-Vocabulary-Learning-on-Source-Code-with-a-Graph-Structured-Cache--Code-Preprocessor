@@ -5,11 +5,11 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.OtherLinkType;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.google.common.collect.Lists;
-import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Vertex;
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 import org.apache.commons.collections4.set.ListOrderedSet;
 import org.apache.commons.lang.StringUtils;
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerEdge;
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerVertex;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +21,10 @@ public class GraphManager {
     private TinkerGraph graph;
     private int id = 1;
     private GraphAttributeParser graphAttributeParser = new GraphAttributeParser();
-    private Map<Integer, Vertex> vertexCache;
+    private Map<Integer, TinkerVertex> vertexCache;
 
     public GraphManager() {
-        graph = new TinkerGraph();
+        graph = TinkerGraph.open();
         vertexCache = new HashMap<>();
     }
 
@@ -39,7 +39,7 @@ public class GraphManager {
     }
 
     private void processEdge(Node node) {
-        Vertex from = vertexCache.get(node.hashCode(true));
+        TinkerVertex from = vertexCache.get(node.hashCode(true));
         for (Map.Entry<OtherLinkType, ListOrderedSet<Node>> entry : node.getOthersNodes().entrySet()) {
             if (entry.getKey() == OtherLinkType.TYPE) {
                 List<String> referenceList = entry.getValue().asList().stream().map(n -> {
@@ -51,12 +51,12 @@ public class GraphManager {
                 setReference(from, referenceList);
             } else {
                 for (Node child : entry.getValue().asList()) {
-                    Vertex to = vertexCache.get(child.hashCode(true));
+                    TinkerVertex to = vertexCache.get(child.hashCode(true));
                     if (to == null) {
                         throw new RuntimeException("Not expected.");
                     }
-                    Edge edge = from.addEdge(entry.getKey().name(), to);
-                    edge.setProperty("type", entry.getKey().name());
+                    TinkerEdge edge = (TinkerEdge) from.addEdge(entry.getKey().name(), to);
+                    edge.property("type", entry.getKey().name());
                     if (entry.getKey() == OtherLinkType.AST) {
                         processEdge(child);
                     }
@@ -82,24 +82,24 @@ public class GraphManager {
         });
     }
 
-    private Vertex createVertex(Node node) {
-        Vertex vertex = graph.addVertex(id++);
+    private TinkerVertex createVertex(Node node) {
+        TinkerVertex vertex = (TinkerVertex) graph.addVertex("id", id++);
         setAttributes(node, vertex);
         return vertex;
     }
 
-    private void setAttributes(Node node, Vertex vertex) {
-        vertex.setProperty("type", node.getClass().getSimpleName());
+    private void setAttributes(Node node, TinkerVertex vertex) {
+        vertex.property("type", node.getClass().getSimpleName());
         if(node.getParentNode().isPresent()) {
-            vertex.setProperty("parentType", node.getParentNode().get().getClass().getSimpleName());
+            vertex.property("parentType", node.getParentNode().get().getClass().getSimpleName());
         }
-        vertex.setProperty("text", node.toString());
+        vertex.property("text", node.toString());
         for (Map.Entry<String, String> entry : graphAttributeParser.getAttributes(node).entrySet()) {
-            vertex.setProperty(entry.getKey(), entry.getValue());
+            vertex.property(entry.getKey(), entry.getValue());
         }
     }
 
-    private void setReference(Vertex vertex, List<String> references) {
-        vertex.setProperty("reference", StringUtils.join(references, ","));
+    private void setReference(TinkerVertex vertex, List<String> references) {
+        vertex.property("reference", StringUtils.join(references, ","));
     }
 }
