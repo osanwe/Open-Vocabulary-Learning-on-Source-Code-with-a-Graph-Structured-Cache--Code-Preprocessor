@@ -81,14 +81,18 @@ public class DataController {
         SourceProcessor sourceFileInfoExtractor = new SourceProcessor(new TypePreProcessor(combinedTypeSolver));
         Map<String, Node> parsedSource = sourceFileInfoExtractor.parseSources(sourceDirectory);
         for(Entry<String, Node> nodeEntry: parsedSource.entrySet()) {
-            GraphManager graphManager = new GraphManager();
-            Node node = nodeEntry.getValue();
-            sourceFileInfoExtractor.process(node);
-            graphManager.process(node);
-            TinkerGraph graph = graphManager.getGraph();
-            OutputStream outputStream = new FileOutputStream(new File(outputDir + File.separator + nodeEntry.getKey() + ".graphml"));
-            GraphMLWriter writer = GraphMLWriter.build().normalize(true).create();
-            writer.writeGraph(outputStream, graph);
+            try {
+                GraphManager graphManager = new GraphManager();
+                Node node = nodeEntry.getValue();
+                sourceFileInfoExtractor.process(node);
+                graphManager.process(node);
+                TinkerGraph graph = graphManager.getGraph();
+                OutputStream outputStream = new FileOutputStream(new File(outputDir + File.separator + nodeEntry.getKey() + ".graphml"));
+                GraphMLWriter writer = GraphMLWriter.build().normalize(true).create();
+                writer.writeGraph(outputStream, graph);
+            } catch (final RuntimeException e) {
+                System.out.println(e.getMessage());
+            }
         }
         return parsedSource.keySet();
     }
